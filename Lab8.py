@@ -159,58 +159,114 @@ def ec_mul(k, P, a, p):
     return res
 
 def ecc_menu():
-    print(f"\n{'='*20} ECC (Абсцисса) {'='*20}")
-    # Параметры из вашего файла: p=3571, a=1, G=(8, 1109), q=3523
-    p, a, G, q = 3571, 1, (8, 1109), 3523
-    choice = input("1. Зашифровать\n2. Расшифровать\nВыбор: ")
+    print(f"\n{'='*20} ECC (Абсцисса) - Автоматический расчет q {'='*20}")
     
-    if choice == '1':
-        cb = int(input(f"Секретный ключ получателя (1-{q}): "))
-        db = ec_mul(cb, G, a, p)
-        if db is None:
-            print("Ошибка: Ключ привел к бесконечной точке. Выберите другое CB.")
+    # Ввод параметров кривой
+    try:
+        p = int(input("Введите простое число p (модуль поля): "))
+        a = int(input("Введите коэффициент 'a' кривой: "))
+        gx = int(input("Введите координату X базовой точки G: "))
+        gy = int(input("Введите координату Y базовой точки G: "))
+        G = (gx, gy)
+    except ValueError:
+        print("Ошибка ввода: параметры должны быть целыми числами.")
+        return
+
+    # Автоматическое вычисление порядка q
+    print("\nВычисление порядка подгруппы q...")
+    q = 1
+    while True:
+        pt = ec_mul(q, G, a, p)
+        if pt is None:  # Точка ушла в бесконечность
+            break
+        q += 1
+        # Защита от бесконечного цикла (по теореме Хассе порядок не может сильно превышать p)
+        if q > p + int(2 * math.sqrt(p)) + 1: 
+            print("Ошибка: Не удалось найти порядок q. Убедитесь, что точка G действительно лежит на кривой.")
             return
             
-        m_text = input("Сообщение: ")
+    print(f"Порядок базовой точки G (q) успешно вычислен: {q}")
+
+    choice = input("\n1. Зашифровать\n2. Расшифровать\nВыбор: ")
+    
+    if choice == '1':
+        cb = int(input(f"Введите секретный ключ получателя (1-{q-1}): "))
+        
+        # Вычисляем открытый ключ получателя Db = cb * G
+        db = ec_mul(cb, G, a, p)
+        if db is None:
+            print("Ошибка: Ключ привел к бесконечной точке. Выберите другое значение.")
+            return
+            
+        print(f"Вычислен открытый ключ получателя (Db): {db}")
+        
+        m_text = input("Введите сообщение для шифрования: ")
         m_ints = text_to_ints(m_text)
         cipher = []
         
         print("\n--- ПРОЦЕСС ШИФРОВАНИЯ ---")
         for m in m_ints:
+            # Генерация случайного k
             k = random.randint(1, q - 1)
+            
+            # R = k * G
             R = ec_mul(k, G, a, p)
+            # P_pt = k * Db
             P_pt = ec_mul(k, db, a, p)
             
-            # Если P_pt None или координата x = 0, перевыбираем k
+            # Проверка, чтобы точка не ушла в бесконечность и абсцисса не была равна 0
             while P_pt is None or P_pt[0] == 0:
                 k = random.randint(1, q - 1)
                 R = ec_mul(k, G, a, p)
                 P_pt = ec_mul(k, db, a, p)
             
+            # e = (m * x) mod p
             e = (m * P_pt[0]) % p
             cipher.append(f"{R[0]} {R[1]} {e}")
-            print(f"  M={m}: k={k} -> R=({R[0]},{R[1]}), e={e}")
+            print(f"  Символ M={m}: выбрано k={k} -> R=({R[0]},{R[1]}), P_x={P_pt[0]}, e={e}")
             
-        print(f"\nШифртекст: {' '.join(cipher)}")
+        print(f"\nИтоговый шифртекст (Rx Ry e): {' '.join(cipher)}")
         
-    else:
-        cb = int(input("Ваш секретный cb: "))
-        data = list(map(int, input("Шифртекст (Rx Ry e): ").split()))
+    elif choice == '2':
+        cb = int(input("Введите ваш секретный ключ cb: "))
+        
+        try:
+            data = list(map(int, input("Введите шифртекст (тройки чисел Rx Ry e через пробел): ").split()))
+        except ValueError:
+            print("Ошибка ввода: шифртекст должен состоять из чисел.")
+            return
+            
+        if len(data) % 3 != 0:
+            print("Ошибка: Количество чисел в шифртексте должно быть кратно 3 (Rx, Ry, e).")
+            return
+            
         res_ints = []
+        print("\n--- ПРОЦЕСС РАСШИФРОВКИ ---")
         for i in range(0, len(data), 3):
             R = (data[i], data[i+1])
             e = data[i+2]
+            
+            # Q = cb * R
             Q = ec_mul(cb, R, a, p)
             
             if Q is None or Q[0] == 0:
-                print("Ошибка при расшифровке: точка в бесконечности.")
+                print(f"Ошибка при расшифровке блока {i//3 + 1}: точка ушла в бесконечность или x=0.")
+                res_ints.append(0) # Заглушка, чтобы не ломать весь текст
                 continue
                 
+            # m = e * x^-1 mod p
             inv_x = mod_inverse(Q[0], p)
-            res_ints.append((e * inv_x) % p)
+            if inv_x is None:
+                print(f"Ошибка: невозможно найти обратный элемент для x={Q[0]}")
+                continue
+                
+            m_decrypted = (e * inv_x) % p
+            res_ints.append(m_decrypted)
+            print(f"  Блок {i//3 + 1}: Q=({Q[0]},{Q[1]}), x^-1={inv_x}, m'={m_decrypted}")
             
-        print(f"Результат: {ints_to_text(res_ints)}")
-        
+        print(f"\nРезультат (текст): {ints_to_text(res_ints)}")
+    else:
+        print("Неверный выбор.")
 # =====================================================================
 #   ГЛАВНОЕ МЕНЮ
 # =====================================================================
