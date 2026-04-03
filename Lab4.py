@@ -194,40 +194,6 @@ def magma_decrypt(hex_str, key_str):
         
     return text_bytes.decode('cp1251', errors='ignore')
 
-def test_gost_vector():
-    print("=== ТЕСТИРОВАНИЕ ВЕКТОРОВ ГОСТ Р 34.12-2015 ===")
-    
-    # Ваши данные
-    text_hex = "fedcba9876543210"
-    key_hex = "ffeeddccbbaa99887766554433221100f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
-    
-    print(f"Исходный текст: {text_hex}")
-    print(f"Ключ:            {key_hex}")
-    
-    # Преобразуем HEX-строки в чистые байты
-    text_bytes = bytes.fromhex(text_hex)
-    key_bytes = bytes.fromhex(key_hex)
-    
-    # Разворачиваем ключ (8 блоков по 32 бита -> 32 раундовых ключа)
-    K = [int.from_bytes(key_bytes[i*4:(i+1)*4], 'big') for i in range(8)]
-    round_keys = K * 3 + K[::-1]
-    
-    # Шифруем 1 блок (64 бита)
-    cipher_bytes = magma_encrypt_block(text_bytes, round_keys)
-    cipher_hex = cipher_bytes.hex()
-    print(f"Зашифровано:     {cipher_hex}")
-    
-    # Расшифровываем обратно
-    decrypted_bytes = magma_decrypt_block(cipher_bytes, round_keys)
-    print(f"Расшифровано:    {decrypted_bytes.hex()}")
-    
-    # Проверка с эталонным значением из ГОСТ
-    expected_cipher = "4ee901e5c2d8ca3d"
-    if cipher_hex == expected_cipher:
-        print("\n[+] УСПЕХ: Результат полностью совпадает с эталоном ГОСТ!")
-    else:
-        print("\n[-] ОШИБКА: Результат отличается от эталона.")
-
 
 # --- ИНТЕРФЕЙС И МЕНЮ ---
 
