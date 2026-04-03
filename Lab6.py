@@ -290,7 +290,11 @@ def encrypt_data(data_bits: str, key_bits: str, start_frame: int = 0) -> str:
 
 
 def decrypt_data(cipher_bits: str, key_bits: str, start_frame: int = 0) -> str:
+<<<<<<< HEAD
     """ A5/1 (идентично шифрованию для поточных шифров)."""
+=======
+    """Дешифрование A5/1 (идентично шифрованию для поточных шифров)."""
+>>>>>>> b3637e7273f5c424d0bb597dd2edeac296f0095e
     return encrypt_data(cipher_bits, key_bits, start_frame)
 
 
@@ -335,7 +339,11 @@ def encrypt_data_a52(data_bits: str, key_bits: str, start_frame: int = 0) -> str
 
 
 def decrypt_data_a52(cipher_bits: str, key_bits: str, start_frame: int = 0) -> str:
+<<<<<<< HEAD
     """расшифрование A5/2 (симметрично шифрованию)."""
+=======
+    """Дешифрование A5/2 (симметрично шифрованию)."""
+>>>>>>> b3637e7273f5c424d0bb597dd2edeac296f0095e
     return encrypt_data_a52(cipher_bits, key_bits, start_frame)
 
 
@@ -350,7 +358,11 @@ def encrypt_text_a52(plaintext: str, key_bits: str, start_frame: int = 0) -> str
 
 
 def decrypt_text_a52(ciphertext: str, key_bits: str, start_frame: int = 0) -> str:
+<<<<<<< HEAD
     """Полный цикл расшифрования текста через алгоритм A5/2."""
+=======
+    """Полный цикл дешифрования текста через алгоритм A5/2."""
+>>>>>>> b3637e7273f5c424d0bb597dd2edeac296f0095e
     bits = ciphertext.replace(' ', '')
     plain_bits = decrypt_data_a52(bits, key_bits, start_frame)
     recovered_text = bits_to_text(plain_bits)
@@ -363,7 +375,11 @@ def decrypt_text_a52(ciphertext: str, key_bits: str, start_frame: int = 0) -> st
 #   ГЛАВНЫЙ ЦИКЛ ПРОГРАММЫ
 # =====================================================================
 def main():
+<<<<<<< HEAD
     """Основное меню приложения для выбора операций шифрования и расшифрования."""
+=======
+    """Основное меню приложения для выбора операций шифрования и дешифрования."""
+>>>>>>> b3637e7273f5c424d0bb597dd2edeac296f0095e
     while True:
         print("\n" + "="*50)
         print("ПОТОЧНЫЙ ШИФР A5 (A5/1 и A5/2)")
@@ -380,7 +396,11 @@ def main():
                 print("Ошибка выбора.")
                 continue
 
+<<<<<<< HEAD
             text = input("Введите текст или биты : ").strip()
+=======
+            text = input("Введите текст или биты (для дешифрования): ").strip()
+>>>>>>> b3637e7273f5c424d0bb597dd2edeac296f0095e
             key_bits = get_key_bits()
             frame_num = get_frame_number()
             
